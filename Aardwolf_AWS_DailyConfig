@@ -1,0 +1,648 @@
+{
+    "Parameters": {
+        "aggregator": {
+            "Type": "String",
+            "Default": "aggregator",
+            "Description": "Name of AWS Config Aggregator"
+        },
+        "BUCKETNAME": {
+            "Type": "String",
+            "Default": "BUCKETNAME",
+            "Description": "Bucket name for storage"
+        },
+        "HOUR": {
+            "Type": "String",
+            "Default": "23",
+            "Description": "The time (hour) the Lambda will run. For example: for 23:50 UTC, type 23"
+        },
+        "MINUTE": {
+            "Type": "String",
+            "Default": "50",
+            "Description": "The time (minute) the Lambda will run. For example: for 23:50 UTC, type 50"
+        }
+    },
+    "Resources": {
+        "configreporterServiceRole71C54B84": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            }
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "ManagedPolicyArns": [
+                    {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:",
+                                {
+                                    "Ref": "AWS::Partition"
+                                },
+                                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                            ]
+                        ]
+                    }
+                ]
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/config_reporter/ServiceRole/Resource",
+                "AWS::CloudFormation::Designer": {
+                    "id": "b79a58c1-10df-4b15-8e8b-d3819624a476"
+                }
+            }
+        },
+        "configreporterServiceRoleDefaultPolicyCB7B9213": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "s3:*",
+                            "Effect": "Allow",
+                            "Resource": [
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:s3:::",
+                                            {
+                                                "Ref": "BUCKETNAME"
+                                            },
+                                            "/*"
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:s3:::",
+                                            {
+                                                "Ref": "BUCKETNAME"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "Action": "config:SelectAggregateResourceConfig",
+                            "Condition": {
+                                "StringEquals": {
+                                    "aws:ResourceAccount": [
+                                        {
+                                            "Ref": "AWS::AccountId"
+                                        }
+                                    ]
+                                }
+                            },
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "PolicyName": "configreporterServiceRoleDefaultPolicyCB7B9213",
+                "Roles": [
+                    {
+                        "Ref": "configreporterServiceRole71C54B84"
+                    }
+                ]
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/config_reporter/ServiceRole/DefaultPolicy/Resource",
+                "AWS::CloudFormation::Designer": {
+                    "id": "08c6f3a2-f04a-4e95-868d-6cc1f7d3bff2"
+                }
+            }
+        },
+        "configreporter21132CDB": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+                    },
+                    "S3Key": "5769bc9b9e4ab54a9295d49d184e7efee3924ed945feee8dd5b8360da34c7196.zip"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "configreporterServiceRole71C54B84",
+                        "Arn"
+                    ]
+                },
+                "Environment": {
+                    "Variables": {
+                        "AGGREGATOR_NAME": {
+                            "Ref": "aggregator"
+                        },
+                        "BUCKET_NAME": {
+                            "Ref": "BUCKETNAME"
+                        }
+                    }
+                },
+                "Handler": "config_reporter.config_reporter",
+                "Runtime": "python3.8",
+                "Timeout": 60
+            },
+            "DependsOn": [
+                "configreporterServiceRoleDefaultPolicyCB7B9213",
+                "configreporterServiceRole71C54B84"
+            ],
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/config_reporter/Resource",
+                "aws:asset:path": "asset.5769bc9b9e4ab54a9295d49d184e7efee3924ed945feee8dd5b8360da34c7196",
+                "aws:asset:is-bundled": false,
+                "aws:asset:property": "Code",
+                "AWS::CloudFormation::Designer": {
+                    "id": "d9dcfcde-eb3c-4687-9807-e3b83d48623e"
+                }
+            }
+        },
+        "configreporterLogRetention5CA39DFA": {
+            "Type": "Custom::LogRetention",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+                        "Arn"
+                    ]
+                },
+                "LogGroupName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "/aws/lambda/",
+                            {
+                                "Ref": "configreporter21132CDB"
+                            }
+                        ]
+                    ]
+                },
+                "RetentionInDays": 30
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/config_reporter/LogRetention/Resource",
+                "AWS::CloudFormation::Designer": {
+                    "id": "e0cc1113-4a2f-4b85-8207-6b2f8bdb2280"
+                }
+            }
+        },
+        "configreporterCurrentVersion35D5A1A59f4c09fcc3b9bfc5ffdb59cd61022f3d": {
+            "Type": "AWS::Lambda::Version",
+            "Properties": {
+                "FunctionName": {
+                    "Ref": "configreporter21132CDB"
+                }
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/config_reporter/CurrentVersion/Resource",
+                "AWS::CloudFormation::Designer": {
+                    "id": "72d1b416-24de-4884-af6c-3fd75f433d74"
+                }
+            }
+        },
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            }
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "ManagedPolicyArns": [
+                    {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:",
+                                {
+                                    "Ref": "AWS::Partition"
+                                },
+                                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                            ]
+                        ]
+                    }
+                ]
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource",
+                "AWS::CloudFormation::Designer": {
+                    "id": "aeb79898-0d37-4cfc-948a-5271340a4955"
+                }
+            }
+        },
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "logs:DeleteRetentionPolicy",
+                                "logs:PutRetentionPolicy"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+                "Roles": [
+                    {
+                        "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+                    }
+                ]
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource",
+                "AWS::CloudFormation::Designer": {
+                    "id": "9799f001-75cd-491a-9039-b75485c1d7f1"
+                }
+            }
+        },
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Handler": "index.handler",
+                "Runtime": "nodejs14.x",
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+                    },
+                    "S3Key": "4cd567bf52e0f31674ae9e960efae8855b8b1249fa9997799ae47dc9f80e9ff8.zip"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+                        "Arn"
+                    ]
+                }
+            },
+            "DependsOn": [
+                "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+                "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+            ],
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+                "aws:asset:path": "asset.4cd567bf52e0f31674ae9e960efae8855b8b1249fa9997799ae47dc9f80e9ff8",
+                "aws:asset:is-bundled": false,
+                "aws:asset:property": "Code",
+                "AWS::CloudFormation::Designer": {
+                    "id": "3539017e-89f3-400d-9c93-ac6350bd5a5e"
+                }
+            }
+        },
+        "ConfigDailyReporterCW24937F9C": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "ScheduleExpression": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "cron(",
+                            {
+                                "Ref": "MINUTE"
+                            },
+                            " ",
+                            {
+                                "Ref": "HOUR"
+                            },
+                            " * * ? *)"
+                        ]
+                    ]
+                },
+                "State": "ENABLED",
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "configreporter21132CDB",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "Target0"
+                    }
+                ]
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/ConfigDailyReporterCW/Resource",
+                "AWS::CloudFormation::Designer": {
+                    "id": "bd9d359a-415e-4553-a027-084479713735"
+                }
+            }
+        },
+        "ConfigDailyReporterCWAllowEventRuleDailyConfigReporterconfigreporter2878640C3A1520A3": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "configreporter21132CDB",
+                        "Arn"
+                    ]
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "ConfigDailyReporterCW24937F9C",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/ConfigDailyReporterCW/AllowEventRuleDailyConfigReporterconfigreporter2878640C",
+                "AWS::CloudFormation::Designer": {
+                    "id": "33af956a-d644-420e-b53e-9ebe2874d807"
+                }
+            }
+        },
+        "TriggerLambda": {
+            "Type": "Custom::Trigger",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "AWSCDKTriggerCustomResourceProviderCustomResourceProviderHandler97BECD91",
+                        "Arn"
+                    ]
+                },
+                "HandlerArn": {
+                    "Ref": "configreporterCurrentVersion35D5A1A59f4c09fcc3b9bfc5ffdb59cd61022f3d"
+                }
+            },
+            "UpdateReplacePolicy": "Delete",
+            "DeletionPolicy": "Delete",
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/TriggerLambda/Default/Default",
+                "AWS::CloudFormation::Designer": {
+                    "id": "4b3d71b0-1aab-49a4-b7ef-dd2291354b59"
+                }
+            }
+        },
+        "AWSCDKTriggerCustomResourceProviderCustomResourceProviderRoleE18FAF0A": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    {
+                        "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                    }
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "Inline",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "lambda:InvokeFunction"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Ref": "configreporterCurrentVersion35D5A1A59f4c09fcc3b9bfc5ffdb59cd61022f3d"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/AWSCDK.TriggerCustomResourceProviderCustomResourceProvider/Role",
+                "AWS::CloudFormation::Designer": {
+                    "id": "d5f58410-7f99-4166-81e1-b007c4a1924c"
+                }
+            }
+        },
+        "AWSCDKTriggerCustomResourceProviderCustomResourceProviderHandler97BECD91": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+                    },
+                    "S3Key": "c38f97e0a56acf79b92716f442bbe4c99fc00e269ffbeee36ebecd97bfd50c4e.zip"
+                },
+                "Timeout": 900,
+                "MemorySize": 128,
+                "Handler": "__entrypoint__.handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "AWSCDKTriggerCustomResourceProviderCustomResourceProviderRoleE18FAF0A",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "nodejs14.x"
+            },
+            "DependsOn": [
+                "AWSCDKTriggerCustomResourceProviderCustomResourceProviderRoleE18FAF0A"
+            ],
+            "Metadata": {
+                "aws:cdk:path": "DailyConfigReporter/AWSCDK.TriggerCustomResourceProviderCustomResourceProvider/Handler",
+                "aws:asset:path": "asset.c38f97e0a56acf79b92716f442bbe4c99fc00e269ffbeee36ebecd97bfd50c4e",
+                "aws:asset:property": "Code",
+                "AWS::CloudFormation::Designer": {
+                    "id": "8b36b8ed-6123-4cff-a4ea-402e4d1a4e08"
+                }
+            }
+        }
+    },
+    "Conditions": {},
+    "Rules": {},
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "aeb79898-0d37-4cfc-948a-5271340a4955": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 180,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "9799f001-75cd-491a-9039-b75485c1d7f1": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 60,
+                    "y": 210
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "3539017e-89f3-400d-9c93-ac6350bd5a5e": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 180,
+                    "y": 210
+                },
+                "z": 1,
+                "embeds": [],
+                "dependson": [
+                    "9799f001-75cd-491a-9039-b75485c1d7f1"
+                ]
+            },
+            "b79a58c1-10df-4b15-8e8b-d3819624a476": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 300,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "08c6f3a2-f04a-4e95-868d-6cc1f7d3bff2": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 300,
+                    "y": 210
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "d9dcfcde-eb3c-4687-9807-e3b83d48623e": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 60,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": [],
+                "dependson": [
+                    "08c6f3a2-f04a-4e95-868d-6cc1f7d3bff2"
+                ]
+            },
+            "bd9d359a-415e-4553-a027-084479713735": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 180,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "33af956a-d644-420e-b53e-9ebe2874d807": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 300,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "72d1b416-24de-4884-af6c-3fd75f433d74": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 420,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "d5f58410-7f99-4166-81e1-b007c4a1924c": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 420,
+                    "y": 210
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "8b36b8ed-6123-4cff-a4ea-402e4d1a4e08": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 420,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "4b3d71b0-1aab-49a4-b7ef-dd2291354b59": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 60,
+                    "y": 450
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "e0cc1113-4a2f-4b85-8207-6b2f8bdb2280": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 180,
+                    "y": 450
+                },
+                "z": 1,
+                "embeds": []
+            }
+        }
+    }
+}

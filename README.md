@@ -31,6 +31,7 @@ You will also need to have a pre-configured Multi-Account AWS Config Aggregator 
 2. ```cd config-daily-json-to-S3/cdk```
 3. ```cdk bootstrap```
 4. ```cdk deploy --parameters aggregator=<aggregator name>  --parameters BUCKET_NAME=<name of bucket to be stored>  --parameters HOUR=<time in UTC (hour)>  --parameters MINUTE=< time in UTC (minute)> --profile <profile of SSO> ```  
+
     Replace the parameters as follows:
     * aggregator - Name of AWS Config Aggregator.
     * BUCKET_NAME - Name of the Bucket to be deployed.
@@ -39,9 +40,8 @@ You will also need to have a pre-configured Multi-Account AWS Config Aggregator 
     
 5. The deployment will generate a report.
 6. Check S3 Bucket.
-
 7. Configure cross account read access. 
-   
+  
    
 * Create an IAM role in account to access bucket. (Within the reading organization account)
 ```
@@ -81,9 +81,6 @@ You will also need to have a pre-configured Multi-Account AWS Config Aggregator 
     ]
 } 
 ```
-
-
-
 
 ## License
 This library is licensed under the MIT-0 License. See the LICENSE file.
