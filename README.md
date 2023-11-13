@@ -12,7 +12,7 @@ Before getting started, make sure that you have a basic understating of the foll
 * AWS Lambda Function
 * Python and Boto3.
 
-You will also need to have a pre-configured Multi-Account AWS Config Aggregator and Amazon S3.
+You must also have a pre-configured Multi-Account AWS Config Aggregator and Amazon S3.
 
 ### Architecture
 1. Amazon CloudWatch event - will trigger Lambda every day
@@ -23,10 +23,10 @@ You will also need to have a pre-configured Multi-Account AWS Config Aggregator 
 ### Getting Started
 
 1. ```git clone https://github.com/AbrictoSecurity/config-daily-json-to-S3-CF.git```
-2. ```Create bucket: cdk-hnb659fds-assets-<Account_ID>-<Region_of_CF> [these is for supporting files]```
+2. ```Create bucket: cdk-hnb659fds-assets-<Account_ID>-<Region_of_CF> [this is for supporting files]```
      a. Put the account id in the place of <Account_ID>
      b. Put the cloud formations region in the place of <Region_of_CF>
-3. ```Upload supporting zips within the above created bucket. These will be found in Support folder.```
+3. ```Upload supporting zips within the above created bucket. These will be found in the Support folder.```
 4. ```Create the bucket.```
 5. ```Create an aggregator if you do not have one already established.```
 6. ```Create new cloud formation stack , uploading the “Aardwolf_AWS_DailyConfig” file.```
@@ -36,9 +36,9 @@ You will also need to have a pre-configured Multi-Account AWS Config Aggregator 
     * HOUR - The hour (UTC) the Lambda will run.
     * MINUTE - The minute (UTC) the Lambda will run.
 8. Check S3 Bucket.
-9. Configure cross account read access. 
+9. Configure cross-account read access. 
       
-* Create an IAM role in account to access bucket. (Within the reading organization account)
+* Create an IAM role in the account to access the bucket. (Within the reading organization account)
 ```
 {
   "Version": "2012-10-17",
