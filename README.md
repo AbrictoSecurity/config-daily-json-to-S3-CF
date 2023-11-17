@@ -27,7 +27,7 @@ You must also have a pre-configured Multi-Account AWS Config Aggregator and Amaz
      a. Put the account id in the place of <Account_ID>
      b. Put the cloud formations region in the place of <Region_of_CF>
 3. ```Upload supporting zips within the above created bucket. These will be found in the Support folder.```
-4. ```Create the bucket.```
+4. ```Create the output bucket.```
 5. ```Create an aggregator if you do not have one already established.```
 6. ```Create new cloud formation stack , uploading the “Aardwolf_AWS_DailyConfig” file.```
 7. ``` Input the parameters as follows:   ``` 
